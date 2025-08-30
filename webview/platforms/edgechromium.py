@@ -28,7 +28,7 @@ from System.Threading.Tasks import Task, TaskScheduler
 clr.AddReference(interop_dll_path('Microsoft.Web.WebView2.Core.dll'))
 clr.AddReference(interop_dll_path('Microsoft.Web.WebView2.WinForms.dll'))
 
-from Microsoft.Web.WebView2.Core import CoreWebView2Cookie, CoreWebView2ServerCertificateErrorAction, CoreWebView2Environment, CoreWebView2WebResourceContext
+from Microsoft.Web.WebView2.Core import CoreWebView2Cookie, CoreWebView2ServerCertificateErrorAction, CoreWebView2Environment, CoreWebView2WebResourceContext, CoreWebView2PermissionState
 from Microsoft.Web.WebView2.WinForms import CoreWebView2CreationProperties, WebView2
 
 for platform in ('win-arm64', 'win-x64', 'win-x86'):
@@ -45,8 +45,17 @@ class EdgeChrome:
         props = CoreWebView2CreationProperties()
         props.UserDataFolder = cache_dir
         self.user_data_folder = props.UserDataFolder
+        
+        browser_arguments = ['--disable-features=ElasticOverscroll']
+        if webview_settings['KIOSK_MODE']:
+            browser_arguments.extend([
+                '--autoplay-policy=no-user-gesture-required',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor',
+            ])
+
         props.set_IsInPrivateModeEnabled(_state['private_mode'])
-        props.AdditionalBrowserArguments = '--disable-features=ElasticOverscroll'
+        props.AdditionalBrowserArguments = ' '.join(browser_arguments)
 
         if webview_settings['ALLOW_FILE_URLS']:
             props.AdditionalBrowserArguments += ' --allow-file-access-from-files'
@@ -178,6 +187,9 @@ class EdgeChrome:
     def on_certificate_error(self, _, args):
         args.set_Action(CoreWebView2ServerCertificateErrorAction.AlwaysAllow)
 
+    def on_permission_requested(self, _, args):
+        args.set_State(CoreWebView2PermissionState.Allow)
+
     def on_script_notify(self, _, args):
         try:
             return_value = args.get_WebMessageAsJson()
@@ -237,6 +249,9 @@ class EdgeChrome:
 
         if _state['ssl'] or webview_settings['IGNORE_SSL_ERRORS']:
             sender.CoreWebView2.ServerCertificateErrorDetected += self.on_certificate_error
+
+        if webview_settings['KIOSK_MODE']:
+            sender.CoreWebView2.PermissionRequested += self.on_permission_requested
 
         sender.CoreWebView2.DownloadStarting += self.on_download_starting
 
