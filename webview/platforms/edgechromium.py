@@ -46,6 +46,10 @@ class EdgeChrome:
         props.UserDataFolder = cache_dir
         self.user_data_folder = props.UserDataFolder
         
+        if _state['no_cache']:
+            if os.path.exists(cache_dir):
+                shutil.rmtree(cache_dir)
+        
         browser_arguments = ['--disable-features=ElasticOverscroll']
         if webview_settings['KIOSK_MODE']:
             browser_arguments.extend([
@@ -270,7 +274,7 @@ class EdgeChrome:
         if _state['user_agent']:
             settings.UserAgent = _state['user_agent']
 
-        if _state['private_mode']:
+        if _state['private_mode'] or _state['no_cache']:
             # cookies persist even if UserDataFolder is in memory. We have to delete cookies manually.
             sender.CoreWebView2.CookieManager.DeleteAllCookies()
 

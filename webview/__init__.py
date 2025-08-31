@@ -123,6 +123,7 @@ _state = ImmutableDict({
     'debug': False,
     'storage_path': None,
     'private_mode': True,
+    'no_cache': False,
     'user_agent': None,
     'http_server': False,
     'ssl': False,
@@ -154,6 +155,7 @@ def start(
     http_port: int | None = None,
     user_agent: str | None = None,
     private_mode: bool = True,
+    no_cache: bool = False,
     storage_path: str | None = None,
     menu: list[Menu] = [],
     server: type[http.ServerType] = http.BottleServer,
@@ -200,6 +202,7 @@ def start(
     _state['user_agent'] = user_agent
     _state['http_server'] = http_server
     _state['private_mode'] = private_mode
+    _state['no_cache'] = no_cache
 
     if icon:
         _state['icon'] = abspath(icon)
